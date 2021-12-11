@@ -106,7 +106,7 @@ True = Bool:new{__tag = "True"}
 False = Bool:new{__tag = "False"}
 ```
 
-然后用 `t["tag"] == "True"` 就可以用来判定 t 作为 Bool 的值是不是 True 。
+然后用 `t["__tag"] == "True"` 就可以用来判定 t 作为 Bool 的值是不是 True 。
 
 比如利用S的数量表示的自然数：
 
