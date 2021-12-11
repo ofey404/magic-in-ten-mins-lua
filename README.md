@@ -28,4 +28,4 @@ QQ群：1070975853 |
 
 ## 类型系统
 
-[偏易|代数数据类型(Algebraic Data Type)[lua 基础]](src/ADT.md)
+[偏易|代数数据类型(Algebraic Data Type)[lua 基础]](doc/ADT.md)
