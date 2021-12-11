@@ -21,9 +21,10 @@ QQ群：1070975853 |
 ## 测试所有用例
 
 ```bash
-# Require luafilesystem
 # luarocks install luafilesystem
-.doc/generate.lua
+make generate
+
+./doc/*.lua
 ```
 
 ## 类型系统
