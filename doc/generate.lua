@@ -1,25 +1,7 @@
 #!/bin/env lua
 
-local lfs = require ("lfs")
-
 local L_OPEN = '```lua'
 local L_CLOSE = '```'
-
-local function script_path()
-   local str = debug.getinfo(2, "S").source:sub(2)
-   return str:match("(.*/)")
-end
-
-local function allmd(path)
-    local ans = {}
-    local md = ".md"
-    for filename in lfs.dir(path) do
-        if (filename:sub(-#md) == md) then
-            table.insert(ans, path..filename)
-        end
-    end
-    return ans
-end
 
 local function md2lua(it)
     local L_IN = false
@@ -52,14 +34,4 @@ local function md2lua(it)
     return table.concat(ans, "")
 end
 
-local SCRIPT_PATH = script_path()
-
-for _, md_path in pairs(allmd(SCRIPT_PATH)) do
-    local md = io.open(md_path, "r")
-    local lua = io.open(md_path:sub(0, -#".md"-1)..".lua", "w")
-    io.input(md)
-    io.output(lua)
-    io.write(md2lua(io.lines()))
-    io.close(md)
-    io.close(lua)
-end
+io.write(md2lua(io.lines()))

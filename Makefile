@@ -1,5 +1,7 @@
-generate:
-	lua ./doc/generate.lua
+doc:
+	$(MAKE) -C $@
 
-clean: $(OUTPUT_LUAS)
-	rm -f $(OUTPUT_LUAS)
+clean:
+	$(MAKE) -C doc clean
+
+.PHONY: doc
