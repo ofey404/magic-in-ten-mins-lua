@@ -21,10 +21,9 @@ QQ群：1070975853 |
 ## 测试所有用例
 
 ```bash
-# luarocks install luafilesystem
-make generate
-
-./doc/*.lua
+make
+./doc/*.lua  # Pick ones you like!
+make clear
 ```
 
 ## 类型系统
