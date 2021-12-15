@@ -2,8 +2,19 @@ objects := $(patsubst %.md,%.lua,$(wildcard *.md))
 
 all: $(objects)
 
-$(objects): %.lua: %.md
+md: sketch.md
+lua: sketch.lua
+
+%.lua: %.md
 	cat $< | lua generate.lua > $@
 
+sketch.md:
+	cat sketch.lua | lua generate.lua --lua2md > $@
+
+sketch.lua:
+	cat sketch.md | lua generate.lua > $@
+
 clean:
-	rm $(objects)
+	rm -f $(objects)
+
+.PHONY: sketch.lua sketch.md
