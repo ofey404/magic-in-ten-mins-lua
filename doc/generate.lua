@@ -49,9 +49,6 @@ local function lua2md(it)
             if line == "#!/bin/env lua" then goto continue end
             first_line = false
         end
-        if (not CODEBLOCK) then
-        else
-        end
         if (CODEBLOCK) then
             if (line == "-- "..L_CLOSE) then
                 table.insert(ans, L_CLOSE.."\n")
