@@ -32,7 +32,16 @@ local function initclass(name)
         setmetatable(obj, self)
         return obj
     end
+    obj.type = name
 end
+
+local function inherit(parent, child_name, fields)
+    local obj = parent:new(fields)
+    obj.type = parent.type..":"..child_name
+    return obj
+end
+
 return {
-    class = initclass
+    class = initclass,
+    inherit = inherit,
 }
