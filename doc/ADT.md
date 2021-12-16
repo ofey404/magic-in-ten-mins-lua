@@ -9,6 +9,7 @@
 
 ```lua
 local class = require("lib").class
+local inherit = require("lib").inherit
 ```
 
 </details>
@@ -21,11 +22,10 @@ local class = require("lib").class
 ```lua
 -- lua 中给表项赋值 nil 会直接删除，
 -- 为展示方便用 "Nil" 作为默认值。
-local Student = {name = "Nil", id = "Nil"}
-class "Student"
+local Student = class("Student", {name = "Nil", id = "Nil"})
 
 s = Student:new{name = 'ofey', id = 404}
--- > print(s.name, s.id)
+print(s.name, s.id)
 -- ofey	404
 ```
 
@@ -37,26 +37,23 @@ s = Student:new{name = 'ofey', id = 404}
 
 ```lua
 -- 这里一定还有更好的模拟方法，让 SchoolPerson.name 的调用直接产生 error，只是我还没想到。
-local SchoolPerson = {
+local SchoolPerson = class("SchoolPerson", {
     name = function() error("This should be implemented by subclass.") end
-}
-class "SchoolPerson"
+})
 
-Student = SchoolPerson:new{
+local Student = inherit(SchoolPerson, "Student", {
     name = "Nil",
     id = "Nil",
-    -- __tag = "Student"
-}
-Teacher = SchoolPerson:new{
+})
+local Teacher = inherit(SchoolPerson, "Teacher", {
     name = "Nil",
     office = "Nil",
-    -- __tag = "Teacher"
-}
+})
 ```
 
 SchoolPerson 可能是 Student 也可能是 Teacher ，可以表示为 Student 和 Teacher 的「和」，即 `string * number + string * string` 。
 
-而使用时可以确认表的键是否有 `id` 或者 `office` 来知道当前的 SchoolPerson 具体是 Student 还是 Teacher ，或者增加一个类型标识字段 `__tag`。
+而使用时可以确认表的键是否有 `id` 或者 `office` 来知道当前的 SchoolPerson 具体是 Student 还是 Teacher ，或者使用我们在 [lib.lua](./lib.lua) 中造的类型标识字段 `type`。
 
 ## 代数数据类型（ADT, Algebraic Data Type）
 
@@ -65,11 +62,10 @@ SchoolPerson 可能是 Student 也可能是 Teacher ，可以表示为 Student �
 利用和类型的枚举特性与积类型的组合特性，我们可以构造出 lua 中本来很基础的基础类型，比如枚举布尔的两个量来构造布尔类型：
 
 ```lua
-local Bool = {}
-class 'Bool'
+local Bool = class('Bool', {})
 
-True = Bool:new{__tag = "True"}
-False = Bool:new{__tag = "False"}
+local True = inherit(Bool, "True", {})
+local False = inherit(Bool, "False", {})
 ```
 
 然后用 `t["__tag"] == "True"` 就可以用来判定 t 作为 Bool 的值是不是 True 。
@@ -77,35 +73,33 @@ False = Bool:new{__tag = "False"}
 比如利用S的数量表示的自然数：
 
 ```lua
-local Nat = {}
-class "Nat"
+local Nat = class("Nat", {})
 
-Z = Nat:new{}
-S = Nat:new{value = "Nil"}
+Z = inherit(Nat, "Z", {})
+S = inherit(Nat, "S", {value = "Nil"})
 
-function S:inc1(val)
-    self.value = val
-    return self
+function Sinc1(val)
+    return S:new{value = val}
 end
 
-local three = S:inc1(S:inc1(S:inc1(Z)))
+local three = Sinc1(Sinc1(Sinc1(Z)))
 ```
 
 这里提一下自然数的皮亚诺构造，一个自然数要么是 0 (也就是上面的 Z ) 要么是比它小一的自然数 +1 (也就是上面的 S ) 。
 
-例如 3 可以用 `S:inc1(S:inc1(S:inc1(Z)))` 来表示：
+例如 3 可以用 `Sinc1(Sinc1(Sinc1(Z)))` 来表示：
 
 再比如链表：
 
 ```lua
-local List = {}
-class "List"
+local List = class("List", {})
 
-Nil = List:new{}
-Cons = List:new{
+
+local Nil = inherit(List, "Nil", {})
+local Cons = inherit(List, "Cons", {
     value = "Nil",
     next = "Nil",
-}
+})
 
 function Cons:link(val, list)
     self.value = val
@@ -129,14 +123,13 @@ Cons:link(1, Cons:link(3, Cons:link(4, Nil:new{})))
 ADT 最适合构造树状的结构，比如解析 JSON 出的结果需要一个聚合数据结构。
 
 ```lua
-local JsonValue = {value = "Nil"}
-class "JsonValue"
+local JsonValue = class("JsonValue", {value = "Nil"})
 
-JsonBool = JsonValue:new{type="JsonBool"}
-JsonInt = JsonValue:new{type="JsonInt"}
-JsonString = JsonValue:new{type="JsonString"}
-JsonArray = JsonValue:new{type="JsonArray"}
-JsonMap = JsonValue:new{type="JsonMap"}
+JsonBool = inherit(JsonValue, "JsonBool", {})
+JsonInt = inherit(JsonValue, "JsonInt", {})
+JsonString = inherit(JsonValue, "JsonString", {})
+JsonArray = inherit(JsonValue, "JsonArray", {})
+JsonMap = inherit(JsonValue, "JsonMap", {})
 ```
 
 > 注1：lua 有用户编写的面向对象库，需要正式的面向对象能力的时候，请不吝使用。

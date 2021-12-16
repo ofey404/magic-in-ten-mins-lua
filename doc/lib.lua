@@ -19,12 +19,8 @@ local function getupperobj(name)
     return obj
 end
 
-local function initclass(name)
-    local obj = getupperobj(name)
-
-    if type(obj) ~= "table" then
-        error("Error: Name \""..name.."\" is not a table.")
-    end
+local function initclass(name, obj)
+    obj = obj or {}
 
     obj.new = function (self, obj)
         obj = obj or {}
@@ -33,10 +29,12 @@ local function initclass(name)
         return obj
     end
     obj.type = name
+    return obj
 end
 
-local function inherit(parent, child_name, fields)
-    local obj = parent:new(fields)
+local function inherit(parent, child_name, newfields)
+    newfields = newfields or {}
+    local obj = parent:new(newfields)
     obj.type = parent.type..":"..child_name
     return obj
 end
