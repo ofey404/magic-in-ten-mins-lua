@@ -40,25 +40,47 @@ local inherit = require("lib").inherit
 local Expr = {}
 class 'Expr'
 
+-- Value 变量
 local Val = inherit(Expr, 'Val', {
-    x = nil,
+    symbol = nil,
     uuid = nil,
-    __tostring = function (self) return self.x end,
-    __eq = function (self, b)
+    __tostring = function(self) return self.symbol end,
+    __eq = function(self, b)
         if self.type ~= "Expr:Val" or b.type ~= "Expr:Val" then
             return false
         end
         return self.uuid == b.uuid
     end
 })
+local function newVal(s, id) return Val:new{symbol = s, uuid = id} end
 
+-- Function 函数定义
 local Fun = inherit(Expr, 'Fun', {
-    x = nil,  -- Val
-    e = nil,  -- Expr
-    __tostring = function (self)
-        return table.concat{"(λ " , self.x , ". " , self.e , ")"}
+    symbol = nil,
+    expr = nil,
+    __tostring = function(self)
+        print(type(self.symbol))
+        return table.concat {
+            "(λ ", tostring(self.symbol), ". ", tostring(self.expr), ")"
+        }
     end
 })
+local function newFun(s, a)
+    if type(s) == "string" then return Fun:new{symbol = newVal(s), expr = a} end
+    return Fun:new{symbol = s, expr = a}
+end
+
+-- Apply 函数应用
+local App = inherit(Expr, 'App', {
+    func = nil,
+    symbol = nil,
+    __tostring = function(self)
+        return table.concat {
+            "(", tostring(self.func), " ", tostring(self.symbol), ")"
+        }
+    end
+})
+local function newApp(e1, e2) return App:new{func = e1, symbol = e2} end
 ```
 
 > 注意到上面代码中 `Val` 有一个类型为 `UUID` 的字段，同时 `equals` 函数只比较 `id` 字段，这个字段是用来区分相同名字的不同变量的。如果不做区分那么对于下面的 λ 表达式：
@@ -82,11 +104,15 @@ local Fun = inherit(Expr, 'Fun', {
 然后就可以构造 λ 表达式了，比如 `(λ x. x (λ x. x)) y` 就可以这样构造：
 
 ```lua
+local expr = newApp(newFun("x", newApp(newVal("x"), newFun("x", newVal("x")))),
+                    newVal("y"))
+print(expr)
 ```
 
 然后就可以定义归约函数 `reduce` 和应用自由变量函数 `apply` 还有用来生成 `UUID` 的 `genUUID` 函数和 `applyUUID` 函数：
 
 ```lua
+
 ```
 
 注意在 `reduce` 一个表达式之前应该先调用 `genUUID` 来生成变量标签否则会抛出空指针异常。
