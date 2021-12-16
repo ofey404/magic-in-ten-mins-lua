@@ -1,7 +1,5 @@
 doc/*.lua
 !doc/generate.lua
-sketch.lua
-sketch.md
 
 .vscode/
 !.vscode/settings.json

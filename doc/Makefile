@@ -1,20 +1,13 @@
-objects := $(patsubst %.md,%.lua,$(wildcard *.md))
+articles := $(filter-out sketch.md,$(wildcard *.md))
+objects := $(patsubst %.md,%.lua,$(articles))
 
 all: $(objects)
 
-md: sketch.md
-lua: sketch.lua
-
-%.lua: %.md
+$(objects): $(articles)
 	cat $< | lua generate.lua > $@
 
-sketch.md:
+sketch.md: sketch.lua
 	cat sketch.lua | lua generate.lua --lua2md > $@
-
-sketch.lua:
-	cat sketch.md | lua generate.lua > $@
 
 clean:
 	rm -f $(objects)
-
-.PHONY: sketch.lua sketch.md

@@ -1,80 +1,81 @@
 #!/bin/env lua
 
-local L_OPEN = '```lua'
-local L_CLOSE = '```'
+local function lineequal(line, expect)
+    if line == expect then
+        return true
+    else
+        return false
+    end
+end
 
-local function md2lua(it)
-    local CODEBLOCK = false
+local function mapinblock(it, config)
+    local INBLOCK = config.initinblock
     local LINENUMBER = 0
-
-    local ans = {"#!/bin/env lua\n\n"}
+    local ans = {}
 
     for line in it do
         LINENUMBER = LINENUMBER + 1
-        if (line == L_OPEN and not CODEBLOCK) or (line == L_CLOSE and CODEBLOCK) then
-            CODEBLOCK = not CODEBLOCK
-            table.insert(ans, "-- "..line.."\n")
-            goto continue
-        elseif (line == L_OPEN and CODEBLOCK) or (line == L_CLOSE and not CODEBLOCK) then
-            error(string.format("codeblock error in line %d", LINENUMBER))
-        end
-
-        if CODEBLOCK then
-            table.insert(ans, line.."\n")
-        else
-            table.insert(ans, "--")
-            if line ~= "" then
-                table.insert(ans, " "..line)
+        if (config.isopen(line) and not INBLOCK) then
+            if config.containborder then
+                table.insert(ans, config.mapinblock(line))
+            else
+                table.insert(ans, config.mapoutblock(line))
             end
-            table.insert(ans, "\n")
+            INBLOCK = true
+        elseif (config.isclose(line) and INBLOCK) then
+            if config.containborder then
+                table.insert(ans, config.mapinblock(line))
+            else
+                table.insert(ans, config.mapoutblock(line))
+            end
+            INBLOCK = false
+        elseif (config.isopen(line) and INBLOCK) or (config.isclose(line) and not INBLOCK) then
+            error(string.format("block mismatch in line %d", LINENUMBER))
+        else
+            if INBLOCK then
+                table.insert(ans, config.mapinblock(line))
+            else
+                table.insert(ans, config.mapoutblock(line))
+            end
         end
-        ::continue::
     end
-    return table.concat(ans, "")
+    return ans
 end
 
-local function starts_with(str, start)
-   return str:sub(1, #start) == start
+local function md2lua(it)
+    local md2luaconfig = {
+        initinblock = false,
+        isopen = function (line) return lineequal(line, '```lua') end,
+        isclose = function (line) return lineequal(line, '```') end,
+        mapinblock = function (line) return line end,
+        mapoutblock = function (line) 
+            if line == "" then
+                return "--"
+            else
+                return "-- "..line
+            end
+        end,
+        blockcontainborder = false,
+    }
+    return table.concat(mapinblock(io.lines(), md2luaconfig), "\n")
 end
 
 local function lua2md(it)
-    local CODEBLOCK = false
-    local LINENUMBER = 0
-
-    local ans = {}
-
-    local first_line = true
-    for line in it do
-        if first_line then
-            if line == "#!/bin/env lua" then goto continue end
-            first_line = false
-        end
-        if (CODEBLOCK) then
-            if (line == "-- "..L_CLOSE) then
-                table.insert(ans, L_CLOSE.."\n")
-                CODEBLOCK = false
-            else
-                table.insert(ans, line.."\n")
-            end
-        else
-            if (line == "-- "..L_OPEN) then
-                table.insert(ans, L_OPEN.."\n")
-                CODEBLOCK = true
-            elseif (starts_with(line, "-- ")) then
-                table.insert(ans, line:sub(4, #line).."\n")
-            else
-                table.insert(ans, "\n")
-            end
-        end
-        ::continue::
-    end
-    return table.concat(ans, "")
+    local lua2mdconfig = {
+        initinblock = false,
+        isopen = function (line) return lineequal(line, '-- ```lua') end,
+        isclose = function (line) return lineequal(line, '-- ```') end,
+        mapinblock = function (line) return line end,
+        mapoutblock = function (line) return line:sub(4, #line) end,
+        blockcontainborder = false,
+    }
+    return table.concat(mapinblock(io.lines(), lua2mdconfig), "\n")
 end
 
 
 if (arg[1]) then
     if (arg[1] == "--lua2md") then
-        io.write(lua2md(io.lines()))
+    io.write(lua2md(io.lines()))
     else
         io.write([[Usage:
     cat XXX.md | ./generate.lua > XXX.lua
