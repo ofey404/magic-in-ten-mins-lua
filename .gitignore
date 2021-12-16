@@ -1,5 +1,6 @@
 doc/*.lua
 !doc/generate.lua
+!doc/lib.lua
 
 .vscode/
 !.vscode/settings.json

@@ -8,41 +8,7 @@
 <details><summary>Helper: 模拟一个简单的类型系统</summary>
 
 ```lua
-local debug = require ("debug")
-
-local function getupperobj(name)
-    local obj = nil
-
-    -- Get local variable from upper environment.
-    local i = 1
-    while true do
-        local uppername, value = debug.getlocal(3, i)
-        if not uppername then
-            error("Error: Name \""..name.."\" is not in upper environment.")
-        end
-        if uppername == name then
-            obj = value
-            break
-        end
-        i = i + 1
-    end
-    return obj
-end
-
-local function initclass(name)
-    local obj = getupperobj(name)
-
-    if type(obj) ~= "table" then
-        error("Error: Name \""..name.."\" is not a table.")
-    end
-
-    obj.new = function (self, obj)
-        obj = obj or {}
-        self.__index = self
-        setmetatable(obj, self)
-        return obj
-    end
-end
+local class = require("lib").class
 ```
 
 </details>
@@ -56,7 +22,7 @@ end
 -- lua 中给表项赋值 nil 会直接删除，
 -- 为展示方便用 "Nil" 作为默认值。
 local Student = {name = "Nil", id = "Nil"}
-initclass "Student"
+class "Student"
 
 s = Student:new{name = 'ofey', id = 404}
 -- > print(s.name, s.id)
@@ -74,7 +40,7 @@ s = Student:new{name = 'ofey', id = 404}
 local SchoolPerson = {
     name = function() error("This should be implemented by subclass.") end
 }
-initclass "SchoolPerson"
+class "SchoolPerson"
 
 Student = SchoolPerson:new{
     name = "Nil",
@@ -100,7 +66,7 @@ SchoolPerson 可能是 Student 也可能是 Teacher ，可以表示为 Student �
 
 ```lua
 local Bool = {}
-initclass 'Bool'
+class 'Bool'
 
 True = Bool:new{__tag = "True"}
 False = Bool:new{__tag = "False"}
@@ -112,7 +78,7 @@ False = Bool:new{__tag = "False"}
 
 ```lua
 local Nat = {}
-initclass "Nat"
+class "Nat"
 
 Z = Nat:new{}
 S = Nat:new{value = "Nil"}
@@ -133,7 +99,7 @@ local three = S:inc1(S:inc1(S:inc1(Z)))
 
 ```lua
 local List = {}
-initclass "List"
+class "List"
 
 Nil = List:new{}
 Cons = List:new{
@@ -164,7 +130,7 @@ ADT 最适合构造树状的结构，比如解析 JSON 出的结果需要一个�
 
 ```lua
 local JsonValue = {value = "Nil"}
-initclass "JsonValue"
+class "JsonValue"
 
 JsonBool = JsonValue:new{type="JsonBool"}
 JsonInt = JsonValue:new{type="JsonInt"}
