@@ -23,9 +23,12 @@ QQ群：1070975853 |
 ```bash
 make
 ./doc/*.lua  # Pick ones you like!
-make clear
+make clean
 ```
 
 ## 类型系统
 
 [偏易|代数数据类型(Algebraic Data Type)[lua 基础]](doc/ADT.md)
+
+[较难|λ 演算(Lambda Calculus)[lua 基础， ADT]](doc/Lambda.md) 
+
