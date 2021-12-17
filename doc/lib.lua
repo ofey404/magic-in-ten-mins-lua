@@ -1,23 +1,5 @@
-local debug = require ("debug")
-
-local function getupperobj(name)
-    local obj = nil
-
-    -- Get local variable from upper environment.
-    local i = 1
-    while true do
-        local uppername, value = debug.getlocal(3, i)
-        if not uppername then
-            error("Error: Name \""..name.."\" is not in upper environment.")
-        end
-        if uppername == name then
-            obj = value
-            break
-        end
-        i = i + 1
-    end
-    return obj
-end
+-- Lib: Simulate a simple type system.
+-- object.type is the type tag, eg: Expr:App
 
 local function initclass(name, obj)
     obj = obj or {}

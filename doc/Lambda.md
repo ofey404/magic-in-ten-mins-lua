@@ -37,8 +37,7 @@ local inherit = require("lib").inherit
 首先，我们要用 ADT 定义出 λ 表达式的数据结构：
 
 ```lua
-local Expr = {}
-class 'Expr'
+local Expr = class('Expr', {})
 
 -- Value 变量
 local Val = inherit(Expr, 'Val', {
@@ -56,31 +55,30 @@ local function newVal(s, id) return Val:new{symbol = s, uuid = id} end
 
 -- Function 函数定义
 local Fun = inherit(Expr, 'Fun', {
-    symbol = nil,
+    argument = nil,
     expr = nil,
     __tostring = function(self)
-        print(type(self.symbol))
         return table.concat {
-            "(λ ", tostring(self.symbol), ". ", tostring(self.expr), ")"
+            "(λ ", tostring(self.argument), ". ", tostring(self.expr), ")"
         }
     end
 })
 local function newFun(s, a)
-    if type(s) == "string" then return Fun:new{symbol = newVal(s), expr = a} end
-    return Fun:new{symbol = s, expr = a}
+    if type(s) == "string" then return Fun:new{argument = newVal(s), expr = a} end
+    return Fun:new{argument = s, expr = a}
 end
 
 -- Apply 函数应用
 local App = inherit(Expr, 'App', {
     func = nil,
-    symbol = nil,
+    expr = nil,
     __tostring = function(self)
         return table.concat {
-            "(", tostring(self.func), " ", tostring(self.symbol), ")"
+            "(", tostring(self.func), " ", tostring(self.expr), ")"
         }
     end
 })
-local function newApp(e1, e2) return App:new{func = e1, symbol = e2} end
+local function newApp(e1, e2) return App:new{func = e1, expr = e2} end
 ```
 
 > 注意到上面代码中 `Val` 有一个类型为 `UUID` 的字段，同时 `equals` 函数只比较 `id` 字段，这个字段是用来区分相同名字的不同变量的。如果不做区分那么对于下面的 λ 表达式：
@@ -106,13 +104,91 @@ local function newApp(e1, e2) return App:new{func = e1, symbol = e2} end
 ```lua
 local expr = newApp(newFun("x", newApp(newVal("x"), newFun("x", newVal("x")))),
                     newVal("y"))
-print(expr)
 ```
 
 然后就可以定义归约函数 `reduce` 和应用自由变量函数 `apply` 还有用来生成 `UUID` 的 `genUUID` 函数和 `applyUUID` 函数：
 
 ```lua
+local random = math.random
+local function uuid()
+    local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+    return string.gsub(template, '[xy]', function (c)
+        local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
+        return string.format('%x', v)
+    end)
+end
 
+function Val:reduce()
+    return self
+end
+
+function Val:apply(val, expr)
+    if self == val then
+        return expr
+    end
+    return self
+end
+
+function Val:genUUID()
+    return self
+end
+
+function Val:applyUUID(val)
+    if self.symbol == val.symbol then
+        return newVal(self.symbol, val.id)
+    end
+    return self
+end
+
+function Fun:reduce()
+    return self
+end
+
+function Fun:apply(val, expr)
+    if val == self.argument then
+        return self
+    end
+    return newFun(self.argument, self.expr:apply(val, expr))
+end
+
+function Fun:genUUID()
+    if self.argument.uuid == nil then
+        local v = newVal(self.argument.symbol, uuid())
+        return newFun(v, self.expr:applyUUID(v):genUUID())
+    end
+    return newFun(self.argument, self.expr:genUUID())
+end
+
+function Fun:applyUUID(val)
+    if (self.argument.symbol == val.symbol) then
+        return self        
+    end
+    return newFun(self.argument, self.expr:applyUUID(val))
+end
+
+function App:reduce()
+    local fr = self.func:reduce()
+    if (fr.type == "Expr:Fun") then
+        return fr.expr:apply(fr.argument, self.expr):reduce()
+    end
+    return newApp(fr, self.expr)
+end
+
+function App:apply(val, expr)
+    return newApp(self.func:apply(val, expr), self.func:apply(val, expr))
+end
+
+function App:genUUID()
+    return newFun(self.func:genUUID(), self.expr:genUUID())
+end
+
+function App:applyUUID(val)
+    return newFun(self.func:applyUUID(val), self.expr:applyUUID(val))
+end
+
+print(expr)
+print(expr:reduce())
+-- ((λ x. (x (λ x. x))) y)  ->  (y y)
 ```
 
 注意在 `reduce` 一个表达式之前应该先调用 `genUUID` 来生成变量标签否则会抛出空指针异常。
